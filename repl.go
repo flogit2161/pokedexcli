@@ -14,11 +14,12 @@ func repl(){
 			fmt.Println("Error Scannning User Input, exiting")
 			return
 		}
-		userInputString := cleanInput(userInput.Text())
-		if len(userInputString) == 0 {
+		command, ok := getCommands()[userInput.Text()]
+		if ok == false {
+			fmt.Println("Command not found, please type a valid command (example : 'help')")
 			continue
 		}
-		fmt.Printf("Your command was: %s\n", userInputString[0])
-
+		command.callback()
+		
 	}
 }
