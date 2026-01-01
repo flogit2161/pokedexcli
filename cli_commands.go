@@ -1,11 +1,10 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
+
+	"github.com/flogit2161/pokedexcli/internal/pokeapi"
 )
 
 type cliCommand struct {
@@ -15,18 +14,9 @@ type cliCommand struct {
 }
 
 type config struct {
-	next     *string
-	previous *string
-}
-
-type LocationArea struct {
-	Count    int     `json:"count"`
-	Next     *string `json:"next"`
-	Previous *string `json:"previous"`
-	Results  []struct {
-		Name string `json:"name"`
-		Url  string `json:"url"`
-	} `json:"results"`
+	pokeapiClient pokeapi.Client
+	next          *string
+	previous      *string
 }
 
 func getCommands() map[string]cliCommand {
@@ -43,7 +33,7 @@ func getCommands() map[string]cliCommand {
 		},
 		"map": {
 			name:        "map",
-			description: "Display 20 location area",
+			description: "Display next page 20 location area",
 			callback:    commandMap,
 		},
 		"mapb": {
@@ -54,12 +44,14 @@ func getCommands() map[string]cliCommand {
 	}
 }
 
+// EXIT FUNCTION
 func commandExit(cfg *config) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
 }
 
+// HELP FUNCTION
 func commandHelp(cfg *config) error {
 	fmt.Println("Welcome to the Pokedex!")
 	fmt.Println("Usage: ")
@@ -70,67 +62,39 @@ func commandHelp(cfg *config) error {
 	return nil
 }
 
+// MAP 20 LOCATIONS FUNCTION
 func commandMap(cfg *config) error {
-	if cfg.next == nil {
-		return fmt.Errorf("Error setting the URL")
-	}
-
-	response, err := http.Get(*cfg.next)
+	locResponse, err := cfg.pokeapiClient.ClientRequest(cfg.next)
 	if err != nil {
 		return err
 	}
 
-	defer response.Body.Close()
+	cfg.next = locResponse.Next
+	cfg.previous = locResponse.Previous
 
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		return err
-	}
-
-	locations := LocationArea{}
-	err = json.Unmarshal(body, &locations)
-	if err != nil {
-		return err
-	}
-
-	cfg.next = locations.Next
-	cfg.previous = locations.Previous
-
-	for _, loc := range locations.Results {
+	for _, loc := range locResponse.Results {
 		fmt.Println(loc.Name)
 	}
 
 	return nil
 }
 
+// MAP 20 LOCATIONS PREVIOUS PAGE FUNCTION
 func commandMapBack(cfg *config) error {
 	if cfg.previous == nil {
 		fmt.Println("You're on the first page")
 		return nil
 	}
 
-	response, err := http.Get(*cfg.previous)
+	locResponse, err := cfg.pokeapiClient.ClientRequest(cfg.previous)
 	if err != nil {
 		return err
 	}
 
-	defer response.Body.Close()
+	cfg.previous = locResponse.Previous
+	cfg.next = locResponse.Next
 
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		return err
-	}
-
-	locations := LocationArea{}
-	err = json.Unmarshal(body, &locations)
-	if err != nil {
-		return err
-	}
-
-	cfg.previous = locations.Previous
-	cfg.next = locations.Next
-
-	for _, loc := range locations.Results {
+	for _, loc := range locResponse.Results {
 		fmt.Println(loc.Name)
 	}
 
