@@ -11,7 +11,7 @@ import (
 )
 
 func repl() {
-	apiClient := pokeapi.NewClient(5 * time.Second)
+	apiClient := pokeapi.NewClient(5*time.Second, 10*time.Second)
 
 	cfg := &config{
 		pokeapiClient: apiClient,
