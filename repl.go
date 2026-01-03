@@ -29,13 +29,19 @@ func repl() {
 		}
 
 		//Only the first word of the slice is checked
-		command, ok := getCommands()[cleanedInput[0]]
+		commandName := cleanedInput[0]
+		command, ok := getCommands()[commandName]
 		if ok == false {
 			fmt.Println("Command not found, please type a valid command (example : 'help')")
 			continue
 		}
 
-		err := command.callback(cfg)
+		var commandArgs []string
+		if len(cleanedInput) > 1 {
+			commandArgs = cleanedInput[1:]
+		}
+
+		err := command.callback(cfg, commandArgs...)
 		if err != nil {
 			return
 		}

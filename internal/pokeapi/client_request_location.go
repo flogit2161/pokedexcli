@@ -6,12 +6,13 @@ import (
 	"net/http"
 )
 
-func (c *Client) ClientRequest(pageUrl *string) (LocationArea, error) {
+func (c *Client) ClientRequestLocation(pageUrl *string) (LocationArea, error) {
 	url := baseURL + "/location-area"
 	if pageUrl != nil {
 		url = *pageUrl
 	}
 
+	//check cache
 	val, ok := c.cache.Get(url)
 	if ok == true {
 		loc := LocationArea{}
