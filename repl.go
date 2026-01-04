@@ -15,6 +15,7 @@ func repl() {
 
 	cfg := &config{
 		pokeapiClient: apiClient,
+		pokemonCaught: make(map[string]pokeapi.PokemonInfo),
 	}
 
 	userInput := bufio.NewScanner(os.Stdin)

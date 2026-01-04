@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 
 	"github.com/flogit2161/pokedexcli/internal/pokeapi"
@@ -15,6 +16,7 @@ type cliCommand struct {
 
 type config struct {
 	pokeapiClient pokeapi.Client
+	pokemonCaught map[string]pokeapi.PokemonInfo
 	next          *string
 	previous      *string
 }
@@ -45,6 +47,11 @@ func getCommands() map[string]cliCommand {
 			name:        "explore",
 			description: "Display all the pokemon of a given area (example: explore pastoria-city-area)",
 			callback:    commandExplore,
+		},
+		"catch": {
+			name:        "catch",
+			description: "Try your luck to catch a pokemon and add it to your Pokedex",
+			callback:    commandCatch,
 		},
 	}
 }
@@ -120,6 +127,34 @@ func commandExplore(cfg *config, areaName ...string) error {
 
 	for _, pokemon := range areaResponse.PokemonEncounters {
 		fmt.Println(pokemon.Pokemon.Name)
+	}
+
+	return nil
+}
+
+func commandCatch(cfg *config, pokemonName ...string) error {
+	if len(pokemonName) != 1 {
+		fmt.Println("Please enter a pokemon name, type help to see all commands")
+		return nil
+	}
+
+	pokemonInfo, err := cfg.pokeapiClient.ClientRequestCatch(pokemonName[0])
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Throwing a Pokeball at %s...\n", pokemonName[0])
+
+	captureChance := rand.Intn(pokemonInfo.BaseExperience + 1)
+	if captureChance >= (pokemonInfo.BaseExperience - 100) {
+		fmt.Printf("%s was caught!\n", pokemonName[0])
+		cfg.pokemonCaught[pokemonName[0]] = pokemonInfo
+		fmt.Println("Added to pokedex! Here are the pokemons inside your pokedex")
+		for _, pokemonPokedex := range cfg.pokemonCaught {
+			fmt.Println(pokemonPokedex.Name)
+		}
+	} else {
+		fmt.Printf("%s escaped!\n", pokemonName[0])
 	}
 
 	return nil
